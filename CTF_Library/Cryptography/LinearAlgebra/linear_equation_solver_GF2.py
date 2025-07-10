@@ -1,13 +1,14 @@
 class linear_equation_solver_GF2:
+	from CTF_Library.Cryptography.BitVector.bit_vector import bit_vector
 	def __init__(self, n : int):
 		assert 0 <= n
 		self.n = n
 		self.equations_and_outputs = []
 	def _reduce(self, equation, output : int):
-		if not isinstance(equation, int):
+		if isinstance(equation, (tuple, self.bit_vector)):
 			equation, output = equation[0], output ^ equation[1]
-		assert isinstance(equation, int)
-		assert 0 <= equation < 2**self.n and 0 <= output <= 1
+		assert isinstance(equation, int) and 0 <= equation < 2**self.n
+		assert isinstance(output, int) and 0 <= output <= 1
 		equation_and_output = equation << 1 | output
 		for eq_o in self.equations_and_outputs:
 			equation_and_output = min(equation_and_output, equation_and_output ^ eq_o)
@@ -51,7 +52,13 @@ class linear_equation_solver_GF2:
 			assert (eq & assignment).bit_count() % 2 == output
 			assert all((eq & b).bit_count() % 2 == 0 for b in basis)
 		return [assignment, basis]
-"""
-Tested on
-- idekCTF2024/crypto/Seedy
-"""
+	def all_solutions(self):
+		assignment, basis = self.solve()
+		res = [assignment]
+		for mask in range(1, 1 << len(basis)):
+			for i in range(len(basis)):
+				assignment ^= basis[i]
+				if mask >> i & 1:
+					break
+			res.append(assignment)
+		return res

@@ -1,5 +1,7 @@
-class _bit_vector:
-	def __init__(self, data: list, flip: list):
+class bit_vector:
+	def __init__(self, data: list = [], flip: list = []):
+		assert isinstance(data, list) and all(0 <= x for x in data)
+		assert isinstance(flip, list) and all(0 <= x <= 1 for x in flip)
 		self.n = len(data)
 		assert len(flip) == self.n
 		for x in data:
@@ -9,43 +11,46 @@ class _bit_vector:
 		self.data = data[:]
 		self.flip = flip[:]
 	def copy(self):
-		return _bit_vector(self.data[:], self.flip[:])
+		return bit_vector(self.data[:], self.flip[:])
+	def broadcast(self, target, n):
+		assert 0 <= target < self.n and 0 <= n
+		return bit_vector([self.data[target]] * n, [self.flip[target]] * n)
 	def __lshift__(self, x):
 		assert isinstance(x, int)
 		assert 0 <= x <= self.n
 		if x == 0:
-			return _bit_vector(self.data, self.flip)
-		return _bit_vector([0] * x + self.data[:-x], [0] * x + self.flip[:-x])
+			return bit_vector(self.data, self.flip)
+		return bit_vector([0] * x + self.data[:-x], [0] * x + self.flip[:-x])
 	def rotl(self, x):
 		assert isinstance(x, int)
 		assert 0 <= x <= self.n
 		if x == 0:
-			return _bit_vector(self.data, self.flip)
-		return _bit_vector(self.data[-x:] + self.data[:-x], self.flip[-x:] + self.flip[:-x])
+			return bit_vector(self.data, self.flip)
+		return bit_vector(self.data[-x:] + self.data[:-x], self.flip[-x:] + self.flip[:-x])
 	def __rshift__(self, x):
 		assert isinstance(x, int)
 		assert 0 <= x <= self.n
 		if x == 0:
-			return _bit_vector(self.data, self.flip)
-		return _bit_vector(self.data[x:] + [0] * x, self.flip[x:] + [0] * x)
+			return bit_vector(self.data, self.flip)
+		return bit_vector(self.data[x:] + [0] * x, self.flip[x:] + [0] * x)
 	def rotr(self, x):
 		assert isinstance(x, int)
 		assert 0 <= x <= self.n
 		if x == 0:
-			return _bit_vector(self.data, self.flip)
-		return _bit_vector(self.data[x:] + self.data[:x], self.flip[x:] + self.flip[:x])
-	# x is integer or _bit_vector
+			return bit_vector(self.data, self.flip)
+		return bit_vector(self.data[x:] + self.data[:x], self.flip[x:] + self.flip[:x])
+	# x is integer or bit_vector
 	def __xor__(self, x):
-		assert isinstance(x, (int, _bit_vector))
+		assert isinstance(x, (int, bit_vector))
 		if isinstance(x, int):
 			assert 0 <= x < 2**self.n
 			flip = self.flip[:]
 			for i in range(self.n):
 				flip[i] ^= x >> i & 1
-			return _bit_vector(self.data, flip)
+			return bit_vector(self.data, flip)
 		else:
 			assert self.n == x.n
-			return _bit_vector([self.data[i] ^ x.data[i] for i in range(self.n)], [self.flip[i] ^ x.flip[i] for i in range(self.n)])
+			return bit_vector([self.data[i] ^ x.data[i] for i in range(self.n)], [self.flip[i] ^ x.flip[i] for i in range(self.n)])
 	# x must be an integer
 	def __and__(self, x):
 		assert isinstance(x, int)
@@ -55,7 +60,7 @@ class _bit_vector:
 		for i in range(self.n):
 			if ~x >> i & 1:
 				data[i], flip[i] = 0, 0
-		return _bit_vector(data, flip)
+		return bit_vector(data, flip)
 	def __or__(self, x):
 		assert isinstance(x, int)
 		assert 0 <= x < 2**self.n
@@ -64,9 +69,9 @@ class _bit_vector:
 		for i in range(self.n):
 			if x >> i & 1:
 				data[i], flip[i] = 0, 1
-		return _bit_vector(data, flip)
+		return bit_vector(data, flip)
 	def __invert__(self):
-		return _bit_vector(self.data, [1 - self.flip[i] for i in range(self.n)])
+		return bit_vector(self.data, [1 - self.flip[i] for i in range(self.n)])
 	def __ilshift__(self, x):
 		assert isinstance(other, int)
 		assert 0 <= x <= n
@@ -88,7 +93,7 @@ class _bit_vector:
 		self = self.rotr(x)
 		return self
 	def __ixor__(self, other):
-		assert isinstance(x, (int, _bit_vector))
+		assert isinstance(other, (int, bit_vector))
 		self = self ^ other
 		return self
 	def __iand__(self, other):
@@ -113,28 +118,29 @@ class _bit_vector:
 		for x in mat:
 			d, f = (self & x).fold()
 			data.append(d), flip.append(f)
-		return _bit_vector(data, flip)
+		return bit_vector(data, flip)
 	def concat(self, other):
-		assert isinstance(other, _bit_vector)
-		return _bit_vector(self.data + other.data, self.flip + other.flip)
+		assert isinstance(other, bit_vector)
+		return bit_vector(self.data + other.data, self.flip + other.flip)
 	def __getitem__(self, i):
 		if isinstance(i, int):
-			assert 0 <= i < self.n
-			return self.data[i], self.flip[i]
+			return (self.data[i], self.flip[i])
+		elif isinstance(i, slice):
+			return bit_vector(self.data[i], self.flip[i])
 		else:
-			return _bit_vector(self.data[i], self.flip[i])
+			assert False
 	def __setitem__(self, i, v):
 		assert isinstance(i, int)
 		assert 0 <= i < self.n
 		self.data[i], self.flip[i] = v
 
-def make_bit_vectors(ns: list, starting_index: int = 0):
+def make_bit_vector(ns: list, starting_index: int = 0):
 	assert isinstance(starting_index, int)
 	assert 0 <= starting_index
 	bvs = []
 	offset = starting_index
 	for n in ns:
 		assert(0 <= n)
-		bvs.append(_bit_vector([1 << i for i in range(offset, offset + n)], [0] * n))
+		bvs.append(bit_vector([1 << i for i in range(offset, offset + n)], [0] * n))
 		offset += n
 	return bvs
