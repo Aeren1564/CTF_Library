@@ -148,9 +148,9 @@ class python_random_breaker:
 		full_state = list(full_state[1])
 		assert len(full_state) == self.N + 1 and full_state[0] == 0x80000000 and full_state[self.N] == self.N
 		state = full_state[:]
-		def rewind_0(left, cur, si):
+		def rewind(left, cur, si):
 			return (cur + si ^ (left ^ left >> 30) * 1566083941) & self.D
-		def advance_1(left, cur, kx, ki):
+		def advance_key(left, cur, kx, ki):
 			return (cur ^ (left ^ left >> 30) * 1664525) + kx + ki & self.D
 		def recover_key(left, up, cur):
 			return cur - (up ^ (left ^ left >> 30) * 1664525) & self.D
@@ -158,7 +158,7 @@ class python_random_breaker:
 		state[0] = state[self.N - 1]
 		for _ in range(self.N - 1):
 			si = (si - 2) % (self.N - 1) + 1
-			state[si] = rewind_0(state[si - 1], state[si], si)
+			state[si] = rewind(state[si - 1], state[si], si)
 			if si == self.N - 1:
 				state[0] = state[self.N - 1]
 		duplciated_key = [0] * self.N
@@ -176,38 +176,48 @@ class python_random_breaker:
 		key = [0] * key_len
 		for si in range(3, self.N):
 			key[(si - 1) % key_len] = recover_key(state[si - 1], self.init[si], state[si]) - (si - 1) % key_len & self.D
-		key[1] = recover_key(advance_1(self.init[0], self.init[1], key[0], 0), self.init[2], state[2]) - 1 & self.D
+		key[1] = recover_key(advance_key(self.init[0], self.init[1], key[0], 0), self.init[2], state[2]) - 1 & self.D
 		if key[-1] > 0 and self.mt.key_to_state(key) == full_state:
 			keys.append(key)
 		return keys
 	# key is a 32-bit integer array
-	# key_tail is key[623:] (equation is overdefined for these variables)
+	# len(key_head) must be a multiple of 623
+	# if key_len <= 623, key_head and key_tail are []
+	# if key_len > 623, len(key_head) + 623 + len(key_tail) == key_len
 	# Note that
 	# - For key_len = 623, there could be lots of solutions differing only at index 0 and 1
 	# - For key_len != 623, there are at most 1 key
 	# Note that key_len = 623 will take very long time to enumerate all solutions if filter_lowest_64_bit is not manually set and ignore_lowest_64_bit is False
-	def recover_all_keys_from_state(self, full_state, key_len, key_tail = [], filter_lowest_64_bit = lambda _: True, ignore_lowest_64_bit = False):
+	def recover_all_keys_from_state(self, full_state, key_len, key_head = [], key_tail = [], filter_lowest_64_bit = lambda _: True, ignore_lowest_64_bit = False):
 		full_state = list(full_state[1])
 		assert len(full_state) == self.N + 1 and full_state[0] == 0x80000000 and full_state[self.N] == self.N
 		assert 1 <= key_len
-		assert len(key_tail) == max(0, key_len - self.N + 1)
+		assert len(key_head) % (self.N - 1) == 0
+		assert key_len < self.N and key_head == key_tail == [] or key_len >= self.N and len(key_head) + self.N - 1 + len(key_tail) == key_len
+		assert all(0 <= x < 2**32 for x in key_head)
 		assert all(0 <= x < 2**32 for x in key_tail)
-		state = full_state[:]
-		def rewind_0(left, cur, si):
+		def rewind(left, cur, si):
 			return (cur + si ^ (left ^ left >> 30) * 1566083941) & self.D
-		def advance_1(left, up, kx, ki):
+		def advance_key(left, up, kx, ki):
 			return (up ^ (left ^ left >> 30) * 1664525) + kx + ki & self.D
-		def rewind_1(left, cur, kx, ki):
+		def rewind_key(left, cur, kx, ki):
 			return (cur - kx - ki ^ (left ^ left >> 30) * 1664525) & self.D
 		def recover_key(left, up, cur, ki):
 			return cur - ki - (up ^ (left ^ left >> 30) * 1664525) & self.D
 		def get_lowest_64_bit(key):
 			return key[0] | key[1] << self.W if len(key) >= 2 else key[0]
+		init = self.init[:]
+		for ki, x in enumerate(key_head):
+			si = ki % (self.N - 1) + 1
+			init[si] = advance_key(init[si - 1], init[si], x, ki)
+			if si == self.N - 1:
+				init[0] = init[self.N - 1]
+		state = full_state[:]
 		si = max(self.N, key_len) % (self.N - 1) + 1
 		state[0] = state[self.N - 1]
 		for _ in range(self.N - 1):
 			si = (si - 2) % (self.N - 1) + 1
-			state[si] = rewind_0(state[si - 1], state[si], si)
+			state[si] = rewind(state[si - 1], state[si], si)
 			if si == self.N - 1:
 				state[0] = state[self.N - 1]
 		ki = max(self.N, key_len) % key_len
@@ -216,24 +226,24 @@ class python_random_breaker:
 			for kx in reversed(key_tail):
 				si = (si - 2) % (self.N - 1) + 1
 				ki = (ki - 1) % key_len
-				state[si] = rewind_1(state[si - 1], state[si], kx, ki)
+				state[si] = rewind_key(state[si - 1], state[si], kx, ki)
 				if si == self.N - 1:
 					state[0] = state[self.N - 1]
-			assert si == 1 and ki == self.N - 1
-			key = [0] * (self.N - 1) + key_tail[:]
+			assert si == 1
+			key = key_head[:] + [0] * (self.N - 1) + key_tail[:]
 			for si in range(1, self.N):
-				key[si - 1] = recover_key(state[si - 1] if si >= 2 else self.init[0], self.init[si], state[si], si - 1)
+				key[len(key_head) + si - 1] = recover_key(state[si - 1] if si >= 2 else init[0], init[si], state[si], len(key_head) + si - 1)
 			if key[-1] > 0 and filter_lowest_64_bit(get_lowest_64_bit(key)):
 				assert self.mt.key_to_state(key) == full_state
 				keys.append(key)
 		else:
 			key = [0] * key_len
 			for si in range(max(3, self.N - key_len), self.N):
-				key[(si - 1) % key_len] = recover_key(state[si - 1], self.init[si], state[si], (si - 1) % key_len)
+				key[(si - 1) % key_len] = recover_key(state[si - 1], init[si], state[si], (si - 1) % key_len)
 			if key_len != 1 and key[-1] == 0:
 				return []
 			for si in range(3, max(3, self.N - key_len)):
-				if key[(si - 1) % key_len] != recover_key(state[si - 1], self.init[si], state[si], (si - 1) % key_len):
+				if key[(si - 1) % key_len] != recover_key(state[si - 1], init[si], state[si], (si - 1) % key_len):
 					return []
 			if ignore_lowest_64_bit:
 				keys.append(key)
@@ -241,12 +251,12 @@ class python_random_breaker:
 				if filter_lowest_64_bit(get_lowest_64_bit(key)) and self.mt.key_to_state(key) == full_state:
 					keys.append(key)
 			elif key_len == self.N - 2:
-				key[1] = recover_key(advance_1(self.init[0], self.init[1], key[0], 0), self.init[2], state[2], 1)
+				key[1] = recover_key(advance_key(init[0], init[1], key[0], 0), init[2], state[2], 1)
 				if filter_lowest_64_bit(get_lowest_64_bit(key)) and self.mt.key_to_state(key) == full_state:
 					keys.append(key)
 			else:
 				# There could be O(sqrt(self.W)) solutions without filter, which could be very slow to process
-				c0 = (self.init[1] ^ (self.init[0] ^ self.init[0] >> 30) * 1664525) & self.D
+				c0 = (init[1] ^ (init[0] ^ init[0] >> 30) * 1664525) & self.D
 				c1 = (state[0] ^ state[0] >> 30) * 1664525 & self.D
 				key0s = [0]
 				for bit in range(self.D.bit_length()):
@@ -258,7 +268,7 @@ class python_random_breaker:
 								key0s_next.append(key0_next)
 					key0s = key0s_next
 				for key0 in key0s:
-					key1 = recover_key(c0 + key0 & self.D, self.init[2], state[2], 1)
+					key1 = recover_key(c0 + key0 & self.D, init[2], state[2], 1)
 					if filter_lowest_64_bit(key0 | key1 << self.W):
 						keys.append([key0, key1] + key[2:])
 				assert all(self.mt.key_to_state(key) == full_state for key in keys)
@@ -283,21 +293,27 @@ class python_random_breaker:
 			assert random.Random(seed).getstate() == full_state
 			seeds.append(seed)
 		return seeds
-	# seed_tail is seed >> 623 * 32
-	def recover_all_integer_seeds_from_state(self, full_state, bit_len, seed_tail = 0, filter_lowest_64_bit = lambda _: True):
+	# bit_len is seed.bit_length()
+	# head_bit_len must be a multiple of 623 * 32
+	# let tail_bit_len = max(0, bit_len - head_bit_len - 623 * 32)
+	# seed_head is seed & 2**head_bit_len - 1
+	# seed_tail is seed >> head_bit_len + 623 * 32
+	def recover_all_integer_seeds_from_state(self, full_state, bit_len, head_bit_len = 0, seed_head = 0, seed_tail = 0, filter_lowest_64_bit = lambda _: True):
 		import random
-		assert 0 <= bit_len
+		tail_bit_len = max(0, bit_len - head_bit_len - (self.N - 1) * 32)
+		assert 0 <= head_bit_len <= bit_len and 0 <= seed_head < 2**head_bit_len
+		assert 0 <= tail_bit_len <= bit_len and 0 <= seed_tail < 2**tail_bit_len
+		assert head_bit_len % ((self.N - 1) * self.W) == 0
 		key_len = max(1, (bit_len + self.W - 1) // self.W)
-		if bit_len <= (self.N - 1) * self.W:
-			assert seed_tail == 0
-			key_tail = []
-		else:
-			assert bit_len == (self.N - 1) * self.W + seed_tail.bit_length()
-			key_tail = []
-			for bit in range((self.N - 1) * self.W, bit_len, self.W):
-				key_tail.append(seed_tail >> bit - (self.N - 1) * self.W & self.D)
+		key_head, key_tail = [], []
+		if bit_len > (self.N - 1) * self.W:
+			assert head_bit_len + (self.N - 1) * self.W <= bit_len
+			for bit in range(0, head_bit_len, self.W):
+				key_head.append(seed_head >> bit & self.D)
+			for bit in range(head_bit_len + (self.N - 1) * self.W, bit_len, self.W):
+				key_tail.append(seed_tail >> bit - head_bit_len - (self.N - 1) * self.W & self.D)
 		seeds = []
-		for key in self.recover_all_keys_from_state(full_state, key_len, key_tail, filter_lowest_64_bit):
+		for key in self.recover_all_keys_from_state(full_state, key_len, key_head, key_tail, filter_lowest_64_bit):
 			seed = 0
 			for x in reversed(key):
 				seed = seed << self.W | x
@@ -365,7 +381,7 @@ class python_random_breaker:
 					assert random.Random(seed[:-64]).getstate() == full_state
 					seeds.append(seed[:-64])
 		if len(key_tail) > 0:
-			for key in self.recover_all_keys_from_state(full_state, len(key_tail) + self.N - 1, key_tail, ignore_lowest_64_bit = True):
+			for key in self.recover_all_keys_from_state(full_state, len(key_tail) + self.N - 1, [], key_tail, ignore_lowest_64_bit = True):
 				solve_for_key(key)
 		else:
 			for key in self.recover_all_small_keys_from_state(full_state):
@@ -562,11 +578,12 @@ if __name__ == "__main__":
 				seed = random.getrandbits(bit_len)
 				if seed.bit_length() == bit_len:
 					break
-			print(f"[test_integer_seed_recovery] Testing bit_len {bit_len}")
 			rng = random.Random()
 			rng.seed(seed)
 			breaker = python_random_breaker()
-			assert seed in breaker.recover_all_integer_seeds_from_state(rng.getstate(), bit_len, seed >> 623 * 32, filter_lowest_64_bit = lambda x: x == seed % 2**64)
+			for head_bit_len in range(0, min(623 * 32 * 3 + 1, max(0, bit_len - 623 * 32) + 1), 623 * 32):
+				print(f"[test_integer_seed_recovery] Testing bit_len {bit_len} head_bit_len {head_bit_len}")
+				assert seed in breaker.recover_all_integer_seeds_from_state(rng.getstate(), bit_len, head_bit_len, seed & 2**head_bit_len - 1, seed >> head_bit_len + 623 * 32, filter_lowest_64_bit = lambda x: x == seed % 2**64)
 		print(f"[test_integer_seed_recovery] Ok")
 
 	def test_small_byte_seed_recovery():
