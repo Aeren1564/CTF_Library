@@ -57,19 +57,19 @@ class inequality_solver_with_SVP:
 		low.append(1), high.append(1)
 		# Estimate the number of solutions with the Gaussian herustic
 		nr, nc = mat.dimensions()
-		if nr != nc:
-			print(f"[INFO] <inequality_solver_with_SVP> Aborting Gaussian heurstic: non-square matrix {nr} != {nc}")
-		elif nr >= 300:
+		if nr >= 300:
 			print(f"[INFO] <inequality_solver_with_SVP> Aborting Gaussian heurstic: matrix too big")
 		else:
-			det = mat.determinant()
+			det = (mat * mat.T).determinant()
 			if det == 0:
-				print(f"[INFO] <inequality_solver_with_SVP> Aborting Gaussian heurstic: zero determinant")
-			else:
-				cnt = 1
-				for l, h in zip(low, high):
-					cnt *= h - l + 1
-				print(f"[INFO] <inequality_solver_with_SVP> Expected number of solutions: {int(round(cnt / det)) + 1}")
+				print(f"[ERROR] <inequality_solver_with_SVP> linearly dependent row vectors")
+				assert False
+			from math import isqrt
+			det = int(sqrt(det))
+			cnt = 1
+			for l, h in zip(low, high):
+				cnt *= h - l + 1
+			print(f"[INFO] <inequality_solver_with_SVP> Expected number of solutions: {int(round(cnt / det)) + 1}")
 		# Scale up the coefficients so that each components of vector has similar size of ranges, run LLL, then scale back down
 		tot = 1
 		multiplier = []

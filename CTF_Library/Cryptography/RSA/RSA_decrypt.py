@@ -1,4 +1,4 @@
-def RSA_decrypt(enc : int, p : int, q : int, e : int):
+def RSA_decrypt(p : int, q : int, e : int, enc : int):
 	from Crypto.Util.number import inverse, isPrime
 	assert isPrime(p)
 	assert isPrime(q)

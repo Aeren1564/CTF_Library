@@ -1,7 +1,7 @@
 class linear_equation_solver_GF2:
 	from CTF_Library.Cryptography.LinearAlgebra.linear_equation_solver_GF2_impl import linear_equation_solver_GF2_impl
 	def __init__(self, n : int):
-		assert 0 <= n
+		assert isinstance(n, int) and 0 <= n
 		self.n = n
 		self.impl = self.linear_equation_solver_GF2_impl(n)
 	def rank(self):
