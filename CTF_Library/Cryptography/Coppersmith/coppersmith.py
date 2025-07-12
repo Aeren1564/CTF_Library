@@ -1,6 +1,6 @@
 # Let f be a monic non-constant polynomial over Z/mZ
 # Return the list of integer r <= root_ub such that gcd(f(r), m) != 1
-def coppersmith_univariate(m: int, f: list, root_ub: int, eval_lb: int = 0):
+def coppersmith_univariate(m: int, f: list, root_ub: int):
 	from sage.all import matrix, ZZ
 	from math import gcd
 	deg = len(f) - 1
@@ -55,8 +55,8 @@ def coppersmith_univariate(m: int, f: list, root_ub: int, eval_lb: int = 0):
 				x = 0
 				for c in reversed(f):
 					x = (root * x + c) % m
-				if eval_lb <= x and gcd(m, x) != 1:
-					roots.append((root, gcd(m, x)))
+				if gcd(m, x) != 1:
+					roots.append(root)
 	return list(sorted(set(roots)));
 
 if __name__ == "__main__":
@@ -72,6 +72,6 @@ if __name__ == "__main__":
 			if gcd(m, eval_at(m, f, x)) != 1:
 				expected.append(x)
 		print(f"[test_coppersmith_univariate] {expected = }")
-		assert [x for x, _ in coppersmith_univariate(m, f, root_ub)] == expected
+		assert coppersmith_univariate(m, f, root_ub) == expected
 	test_coppersmith_univariate(10001, [-222, 5000, 10, 1], 5)
 	test_coppersmith_univariate((2**30 + 3) * (2**32 + 15), [1942528644709637042, 1234567890123456789, 987654321987654321, 1], 2**14)

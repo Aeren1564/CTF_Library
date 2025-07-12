@@ -1,16 +1,11 @@
-def RSA_decrypt(p : int, q : int, e : int, enc : int):
+def RSA_decrypt(primes: list, e : int, enc : int):
 	from Crypto.Util.number import inverse, isPrime
-	assert isPrime(p)
-	assert isPrime(q)
+	from math import prod
+	from sage.all import pari, Zmod
+	assert all(isPrime(p) for p in primes)
 	assert e > 0
-	assert 0 <= enc < p * q
-	emod = (p - 1) * (q - 1) if p != q else p * (p - 1)
-	from sage.all import gcd
-	if gcd(emod, e) == 1:
-		return [pow(enc, inverse(e, emod), p * q)]
-	else:
-		from sage.all import pari, Zmod
+	mod = prod(primes)
+	assert 0 <= enc < mod
+	for p in primes:
 		pari.addprimes(p)
-		base = Zmod(p * q)(enc).nth_root(e)
-		root = Zmod(p * q)(1).nth_root(e)
-		return [int(base * root**i) for i in range(e)]
+	return list(map(int, Zmod(mod)(enc).nth_root(e, all = True)))

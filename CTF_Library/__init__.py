@@ -3,7 +3,7 @@ import importlib
 import os
 import sys
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 __all__ = []
 
@@ -47,11 +47,12 @@ from Crypto.Util.strxor import strxor
 import hashlib
 from base64 import b64encode, b64decode
 
-from multiprocessing import Pool
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from gmpy2 import isqrt, iroot
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+import multiprocessing
 import ast
 import copy
+import code
 from fractions import Fraction
 import string
 import numpy
@@ -69,6 +70,8 @@ import time
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from collections import defaultdict
+
+import cuso
 
 flag_char_set = "_{}:" + string.ascii_letters + string.digits + string.punctuation
 
@@ -107,15 +110,15 @@ __all__ += [
 	"b64encode",
 	"b64decode",
 
-	# from multiprocessing and concurrent.futures
-	"Pool",
-	"ProcessPoolExecutor",
-	"ThreadPoolExecutor",
-	"as_completed",
-
 	# from gmpy2
 	"isqrt",
 	"iroot",
+
+	# from multiprocessing and concurrent.futures
+	"multiprocessing",
+	"ProcessPoolExecutor",
+	"ThreadPoolExecutor",
+	"as_completed",
 
 	# from collections
 	"defaultdict",
@@ -125,6 +128,7 @@ __all__ += [
 	"ast",
 	"copy",
 	"Fraction",
+	"code",
 	"string",
 	"numpy",
 	"itertools",
@@ -139,6 +143,9 @@ __all__ += [
 	"subprocess",
 	"time",
 	"urllib3",
+
+	# cuso
+	"cuso",
 
 	# custom variable
 	"flag_char_set",
