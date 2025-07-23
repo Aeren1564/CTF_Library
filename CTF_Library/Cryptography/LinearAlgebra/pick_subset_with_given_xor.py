@@ -1,10 +1,10 @@
 def pick_subset_with_given_xor(values : list, target : int):
+	from CTF_Library.Cryptography.LinearAlgebra.linear_equation_solver_GF2 import linear_equation_solver_GF2
 	values, target = list(map(int, values)), int(target)
 	assert all(x >= 0 for x in values) and target >= 0
 	dim = target.bit_length()
 	for x in values:
 		dim = max(dim, x.bit_length())
-	from linear_equation_solver_GF2 import linear_equation_solver_GF2
 	solver = linear_equation_solver_GF2(len(values))
 	for d in range(dim):
 		equation = 0

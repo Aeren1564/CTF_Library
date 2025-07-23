@@ -30,7 +30,7 @@ def ECDLP_prime_power_mod(p: int, e: int, coef: list, P: tuple, Q: tuple, thresh
 	import time
 	from math import lcm
 	from sage.all import is_prime, CRT, ZZ, Zmod, GF, Qp, EllipticCurve, factor
-	from EC_coordinate_normalizer import EC_coordinate_normalizer
+	from CTF_Library.Cryptography.EllipticCurve.EC_coordinate_normalizer import EC_coordinate_normalizer
 	assert p >= 5 and is_prime(p) and e >= 1
 	mod = p**e
 	if len(coef) == 2:

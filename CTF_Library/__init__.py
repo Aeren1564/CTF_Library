@@ -2,8 +2,9 @@ import pkgutil
 import importlib
 import os
 import sys
+sys.setrecursionlimit(10**9)
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 
 __all__ = []
 
@@ -62,6 +63,7 @@ import secrets
 import requests
 import re
 import traceback
+import mpmath
 import os
 import json
 import zlib
@@ -137,6 +139,7 @@ __all__ += [
 	"requests",
 	"re",
 	"traceback",
+	"mpmath",
 	"os",
 	"json",
 	"zlib",

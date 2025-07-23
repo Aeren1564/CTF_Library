@@ -25,7 +25,9 @@ def ECDDHP_prime_power_mod(p: int, e: int, coef: list, P: tuple, Q: tuple, targe
 	coef = list(map(int, coef))
 	from math import lcm
 	from sage.all import is_prime, CRT, ZZ, Zmod, GF, Qp, EllipticCurve, factor
-	from EC_coordinate_normalizer import EC_coordinate_normalizer
+	from CTF_Library.Cryptography.EllipticCurve.EC_coordinate_normalizer import EC_coordinate_normalizer
+	from CTF_Library.Cryptography.EllipticCurve.ECDLP_prime_power_mod import ECDLP_prime_power_mod
+	from CTF_Library.Cryptography.EllipticCurve.custom_elliptic_curve import custom_elliptic_curve
 	assert p >= 5 and is_prime(p) and e >= 1
 	mod = p**e
 	if len(coef) == 2:
@@ -37,12 +39,10 @@ def ECDDHP_prime_power_mod(p: int, e: int, coef: list, P: tuple, Q: tuple, targe
 	Qx, Qy = map(int, normalizer.map(Qx, Qy))
 	targets = [(tuple(map(int, normalizer.map(*R))), tuple(map(int, normalizer.map(*S)))) for R, S in targets]
 	desc = -16 * (4 * coef[0]**3 + 27 * coef[1]**2) % p
-	from ECDLP_prime_power_mod import ECDLP_prime_power_mod
 	if desc == 0:
 		if e >= 2:
 			return [None for _ in targets]
 		print(f"[INFO]<ECDDHP_prime_power_mod> singular begin")
-		from custom_elliptic_curve import custom_elliptic_curve
 		k = ECDLP_prime_power_mod(p, 1, coef, (Px, Py), (Qx, Qy), threshold, threshold2)[0]
 		EC = custom_elliptic_curve(p, coef)
 		print(f"[INFO]<ECDDHP_prime_power_mod> singular end")

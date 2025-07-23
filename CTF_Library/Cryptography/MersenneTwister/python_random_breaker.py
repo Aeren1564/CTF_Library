@@ -540,6 +540,7 @@ class python_random_breaker:
 			real_outputs = [rng.getrandbits(self.W) for _ in range(self.N)]
 			assert all(real_outputs[i] == x for i, x in zip(indices, outputs))
 		return seeds
+
 if __name__ == "__main__":
 	import random
 
