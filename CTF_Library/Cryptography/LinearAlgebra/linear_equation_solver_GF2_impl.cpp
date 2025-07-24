@@ -40,7 +40,7 @@ using aligned_vector = std::vector<uint64_t, AlignedAllocator<uint64_t, 64>>;
 
 aligned_vector pyint_to_aligned_array(py::int_ pyx, int nb){
 	assert(!pyx.is_none());
-	PyObject* py_long = pyx.ptr();
+	PyObject *py_long = pyx.ptr();
 	aligned_vector result(nb);
 	int status = _PyLong_AsByteArray(
 		(PyLongObject *)py_long,
@@ -53,7 +53,7 @@ aligned_vector pyint_to_aligned_array(py::int_ pyx, int nb){
 	return result;
 }
 
-py::int_ array_to_pyint(const aligned_vector &x){
+py::int_ aligned_array_to_pyint(const aligned_vector &x){
 	PyObject* py_long = _PyLong_FromByteArray(
 		reinterpret_cast<const unsigned char *>(x.data()),
 		x.size() * sizeof(uint64_t),
@@ -69,8 +69,8 @@ void vectorized_xor(aligned_vector &x, const aligned_vector &y){
 	int nb = (int)x.size();
 	for(auto i = 0; i < nb; i += 8){
 		if(i + 8 <= nb){
-			v8int64 *vec_x_ptr = reinterpret_cast<v8int64*>(&x[i]);
-			v8int64 vec_y = *reinterpret_cast<const v8int64*>(&y[i]);
+			v8int64 *vec_x_ptr = reinterpret_cast<v8int64 *>(&x[i]);
+			v8int64 vec_y = *reinterpret_cast<const v8int64 *>(&y[i]);
 			*vec_x_ptr ^= vec_y;
 		}
 		else for(auto j = 0; i + j < nb; ++ j) x[i + j] ^= y[i + j];
@@ -131,9 +131,9 @@ struct linear_equation_solver_GF2_impl{
 			aligned_vector b(nb);
 			b[i / w] |= uint64_t{1} << i % w;
 			for(auto j = 0; j < rank(); ++ j) if(equations[j][i / w] >> i % w & 1) b[pivots[j] / w] |= uint64_t{1} << pivots[j] % w;
-			basis.push_back(array_to_pyint(b));
+			basis.push_back(aligned_array_to_pyint(b));
 		}
-		return std::pair{array_to_pyint(assignment), basis};
+		return std::pair{aligned_array_to_pyint(assignment), basis};
 	}
 };
 

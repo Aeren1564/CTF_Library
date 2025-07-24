@@ -665,6 +665,7 @@ if __name__ == "__main__":
 					assert [seed] == breaker.recover_all_byte_seeds_from_few_outputs(byte_len, cur_outputs, True)
 				else:
 					assert seed in breaker.recover_all_byte_seeds_from_few_outputs(byte_len, cur_outputs, False)
+		print(f"[test_recover_all_byte_seeds_from_few_outputs] Ok")
 
 	test_state_recovery()
 	test_small_integer_seed_recovery()

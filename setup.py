@@ -10,6 +10,13 @@ ext_modules = [
 		extra_compile_args=["-std=c++26", "-O3", "-march=native"],
 		language="c++",
 	),
+	Extension(
+		name="CTF_Library.Cryptography.Hash.hash_impl",
+		sources=["CTF_Library/Cryptography/Hash/hash_impl.cpp"],
+		include_dirs=[pybind11.get_include()],
+		extra_compile_args=["-std=c++26", "-O3", "-march=native"],
+		language="c++",
+	),
 ]
 
 setup(
