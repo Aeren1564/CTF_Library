@@ -137,7 +137,7 @@ struct linear_equation_solver_GF2_impl{
 	}
 };
 
-PYBIND11_MODULE(linear_equation_solver_GF2_impl, m) {
+PYBIND11_MODULE(linear_equation_solver_GF2_impl, m){
 	py::class_<linear_equation_solver_GF2_impl>(m, "linear_equation_solver_GF2_impl")
 		.def(py::init<int>())
 		.def("add_equation_if_consistent", &linear_equation_solver_GF2_impl::add_equation_if_consistent)

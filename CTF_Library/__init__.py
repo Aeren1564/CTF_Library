@@ -4,7 +4,7 @@ import os
 import sys
 sys.setrecursionlimit(10**9)
 
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 
 __all__ = []
 
@@ -14,6 +14,8 @@ from Crypto.Util.Padding import pad, unpad
 from Crypto.Util.strxor import strxor
 import hashlib
 from base64 import b64encode, b64decode
+import ecdsa
+import fastecdsa
 
 from gmpy2 import is_square, isqrt, iroot
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
@@ -72,6 +74,9 @@ __all__ += [
 	# from base64
 	"b64encode",
 	"b64decode",
+
+	"ecdsa",
+	"fastecdsa",
 
 	# from gmpy2
 	"is_square",

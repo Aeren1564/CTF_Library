@@ -293,7 +293,7 @@ class python_random_breaker:
 			assert random.Random(seed).getstate() == full_state
 			seeds.append(seed)
 		return seeds
-	# bit_len is seed.bit_length()
+	# bit_len is an upper bound of seed.bit_length() producing identical key_len
 	# head_bit_len must be a multiple of 623 * 32
 	# let tail_bit_len = max(0, bit_len - head_bit_len - 623 * 32)
 	# seed_head is seed & 2**head_bit_len - 1
@@ -317,10 +317,7 @@ class python_random_breaker:
 			seed = 0
 			for x in reversed(key):
 				seed = seed << self.W | x
-			assert filter_lowest_64_bit(seed % 2**64)
-			if seed.bit_length() != bit_len:
-				continue
-			assert random.Random(seed).getstate() == full_state
+			assert filter_lowest_64_bit(seed % 2**64) and random.Random(seed).getstate() == full_state
 			seeds.append(seed)
 		return seeds
 	# https://github.com/python/cpython/blob/main/Lib/random.py#L154-L167
