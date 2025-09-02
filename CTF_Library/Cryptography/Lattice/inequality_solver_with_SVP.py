@@ -41,6 +41,7 @@ class inequality_solver_with_SVP:
 		from math import lcm, isqrt
 		import random
 		from sage.all import matrix, identity_matrix, vector, ZZ
+		from CTF_Library.Cryptography.Lattice.reduce_lattice import reduce_lattice
 		n, m = self.n, len(self.coefs)
 		for iteration in range(repeat):
 			print(f"[INFO] <inequality_solver_with_SVP> Iteration #{iteration}")
@@ -87,7 +88,7 @@ class inequality_solver_with_SVP:
 			for i in range(nr):
 				for j in range(nc):
 					mat[i, j] *= multiplier[j]
-			mat = mat.LLL()
+			mat = reduce_lattice(mat)
 			for i in range(nr):
 				for j in range(nc):
 					mat[i, j] //= multiplier[j]
