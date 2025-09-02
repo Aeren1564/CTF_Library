@@ -4,7 +4,7 @@ import os
 import sys
 sys.setrecursionlimit(10**9)
 
-__version__ = "0.2.6"
+__version__ = "0.2.7"
 
 __all__ = []
 
@@ -23,6 +23,7 @@ import multiprocessing
 import ast
 import copy
 import code
+import cuso
 from fractions import Fraction
 import string
 import numpy
@@ -41,8 +42,6 @@ import time
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from collections import defaultdict
-
-import cuso
 
 flag_char_set = "_{}:" + string.ascii_letters + string.digits + string.punctuation
 
@@ -74,6 +73,8 @@ __all__ += [
 	# from base64
 	"b64encode",
 	"b64decode",
+
+	"cuso",
 
 	"ecdsa",
 	"fastecdsa",
@@ -113,9 +114,6 @@ __all__ += [
 	"subprocess",
 	"time",
 	"urllib3",
-
-	# cuso
-	"cuso",
 
 	# custom variable
 	"flag_char_set",
