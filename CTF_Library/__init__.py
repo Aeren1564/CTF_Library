@@ -8,6 +8,37 @@ __version__ = "0.2.7"
 
 __all__ = []
 
+package_path = __path__[0]
+package_name = __name__
+
+# Import all Python modules and subpackages in this directory
+for finder, name, is_pkg in pkgutil.iter_modules([package_path]):
+	full_name = f"{package_name}.{name}"
+	module = importlib.import_module(full_name)
+	if hasattr(module, "__all__"):
+		for symbol in module.__all__:
+			globals()[symbol] = getattr(module, symbol)
+		__all__.extend(module.__all__)
+	else:
+		for symbol in dir(module):
+			if not symbol.startswith("_"):
+				globals()[symbol] = getattr(module, symbol)
+				__all__.append(symbol)
+	if is_pkg:
+		sub_path = module.__path__
+		for sub_finder, sub_name, sub_ispkg in pkgutil.iter_modules(sub_path):
+			sub_full_name = f"{full_name}.{sub_name}"
+			sub_module = importlib.import_module(sub_full_name)
+			if hasattr(sub_module, "__all__"):
+				for symbol in sub_module.__all__:
+					globals()[symbol] = getattr(sub_module, symbol)
+				__all__.extend(sub_module.__all__)
+			else:
+				for symbol in dir(sub_module):
+					if not symbol.startswith("_"):
+						globals()[symbol] = getattr(sub_module, symbol)
+						__all__.append(symbol)
+
 from Crypto.Cipher import AES, DES
 from Crypto.Util.number import bytes_to_long, long_to_bytes, inverse, ceil_div, size, isPrime, getPrime, getStrongPrime, getRandomInteger, getRandomNBitInteger, getRandomRange
 from Crypto.Util.Padding import pad, unpad
@@ -42,6 +73,27 @@ import time
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from collections import defaultdict
+
+import pwn
+for name in dir(pwn):
+	if not name.startswith("_"):
+		try:
+			globals()[name] = getattr(pwn, name)
+			__all__.append(name)
+		except AttributeError:
+			# skip attributes that cannot be accessed
+			pass
+
+import sage.all
+sage.all.proof.all(False)
+for name in dir(sage.all):
+	if not name.startswith("_"):
+		try:
+			globals()[name] = getattr(pwn, name)
+			__all__.append(name)
+		except AttributeError:
+			# skip attributes that cannot be accessed
+			pass
 
 flag_char_set = "_{}:" + string.ascii_letters + string.digits + string.punctuation
 
@@ -118,55 +170,3 @@ __all__ += [
 	# custom variable
 	"flag_char_set",
 ]
-
-import pwn
-for name in dir(pwn):
-	if not name.startswith("_"):
-		try:
-			globals()[name] = getattr(pwn, name)
-			__all__.append(name)
-		except AttributeError:
-			# skip attributes that cannot be accessed
-			pass
-
-import sage.all
-sage.all.proof.all(False)
-for name in dir(sage.all):
-	if not name.startswith("_"):
-		try:
-			globals()[name] = getattr(pwn, name)
-			__all__.append(name)
-		except AttributeError:
-			# skip attributes that cannot be accessed
-			pass
-
-package_path = __path__[0]
-package_name = __name__
-
-# Import all Python modules and subpackages in this directory
-for finder, name, is_pkg in pkgutil.iter_modules([package_path]):
-	full_name = f"{package_name}.{name}"
-	module = importlib.import_module(full_name)
-	if hasattr(module, "__all__"):
-		for symbol in module.__all__:
-			globals()[symbol] = getattr(module, symbol)
-		__all__.extend(module.__all__)
-	else:
-		for symbol in dir(module):
-			if not symbol.startswith("_"):
-				globals()[symbol] = getattr(module, symbol)
-				__all__.append(symbol)
-	if is_pkg:
-		sub_path = module.__path__
-		for sub_finder, sub_name, sub_ispkg in pkgutil.iter_modules(sub_path):
-			sub_full_name = f"{full_name}.{sub_name}"
-			sub_module = importlib.import_module(sub_full_name)
-			if hasattr(sub_module, "__all__"):
-				for symbol in sub_module.__all__:
-					globals()[symbol] = getattr(sub_module, symbol)
-				__all__.extend(sub_module.__all__)
-			else:
-				for symbol in dir(sub_module):
-					if not symbol.startswith("_"):
-						globals()[symbol] = getattr(sub_module, symbol)
-						__all__.append(symbol)

@@ -37,4 +37,3 @@ if __name__ == "__main__":
 	for c, r in zip(coef, rems):
 		s += c * r
 	assert s % mod == obj
-
